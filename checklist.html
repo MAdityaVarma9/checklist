@@ -1,0 +1,1678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Checklist — Tasks, History &amp; Activity Log</title>
+<style>
+  :root{
+    color-scheme: light dark;
+
+    --bg: #f4f6fb;
+    --bg-grad-1: #eef1fb;
+    --bg-grad-2: #f7f8fc;
+    --surface: #ffffff;
+    --surface-2: #f1f3f9;
+    --text: #171a21;
+    --muted: #6b7280;
+    --border: #e2e6ef;
+    --accent: #4f46e5;
+    --accent-hover: #4338ca;
+    --accent-soft: rgba(79,70,229,.14);
+    --danger: #e11d48;
+    --danger-soft: rgba(225,29,72,.10);
+    --ok: #10b981;
+    --ok-soft: rgba(16,185,129,.14);
+    --warn: #d97706;
+    --warn-soft: rgba(245,158,11,.14);
+
+    --p-high-bg: rgba(244,63,94,.12);   --p-high-fg: #be123c;  --p-high-bd: rgba(244,63,94,.28);
+    --p-med-bg:  rgba(245,158,11,.14);  --p-med-fg:  #b45309;  --p-med-bd:  rgba(245,158,11,.30);
+    --p-low-bg:  rgba(16,185,129,.13);  --p-low-fg:  #047857;  --p-low-bd:  rgba(16,185,129,.30);
+
+    --radius: 14px;
+    --shadow-sm: 0 1px 2px rgba(16,24,40,.05);
+    --shadow: 0 1px 2px rgba(16,24,40,.05), 0 10px 26px -16px rgba(16,24,40,.35);
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg: #0d1015;
+      --bg-grad-1: #10131a;
+      --bg-grad-2: #0b0e13;
+      --surface: #161b22;
+      --surface-2: #1d232d;
+      --text: #e7eaf0;
+      --muted: #9aa4b2;
+      --border: #262d38;
+      --accent: #7c83ff;
+      --accent-hover: #8f95ff;
+      --accent-soft: rgba(124,131,255,.18);
+      --danger: #fb7185;
+      --danger-soft: rgba(251,113,133,.12);
+      --ok: #34d399;
+      --ok-soft: rgba(52,211,153,.18);
+      --warn: #fbbf24;
+      --warn-soft: rgba(251,191,36,.14);
+
+      --p-high-bg: rgba(244,63,94,.18);  --p-high-fg: #fda4af; --p-high-bd: rgba(244,63,94,.38);
+      --p-med-bg:  rgba(245,158,11,.18); --p-med-fg:  #fcd34d; --p-med-bd:  rgba(245,158,11,.38);
+      --p-low-bg:  rgba(16,185,129,.18); --p-low-fg:  #6ee7b7; --p-low-bd:  rgba(16,185,129,.38);
+
+      --shadow-sm: 0 1px 2px rgba(0,0,0,.5);
+      --shadow: 0 1px 2px rgba(0,0,0,.5), 0 14px 30px -18px rgba(0,0,0,.9);
+    }
+  }
+
+  *{ box-sizing: border-box; }
+  [hidden]{ display: none !important; }
+
+  html, body{ margin:0; padding:0; }
+
+  body{
+    min-height: 100vh;
+    background:
+      radial-gradient(1100px 520px at 50% -240px, var(--bg-grad-1), transparent 70%),
+      linear-gradient(180deg, var(--bg-grad-2), var(--bg) 340px);
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+                 "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+    font-size: 16px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  .app{
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 30px 16px 80px;
+  }
+
+  /* =========================================================
+     Header + live clock
+     ========================================================= */
+  .app-header{ margin-bottom: 20px; }
+
+  .header-top{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .brand{ min-width: 0; }
+
+  .brand h1{
+    margin: 0 0 3px;
+    font-size: clamp(25px, 5vw, 33px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(92deg, var(--accent), #ec4899 92%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    display: inline-block;
+  }
+
+  .tagline{
+    margin: 0;
+    color: var(--muted);
+    font-size: 13.5px;
+  }
+
+  .clock{
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 15px 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    box-shadow: var(--shadow-sm);
+    flex: 0 0 auto;
+  }
+
+  .clock-dot{
+    width: 8px; height: 8px;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    background: var(--ok);
+    animation: pulse 2s ease-out infinite;
+  }
+
+  @keyframes pulse{
+    0%   { box-shadow: 0 0 0 0 rgba(16,185,129,.5); }
+    70%  { box-shadow: 0 0 0 9px rgba(16,185,129,0); }
+    100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+  }
+
+  .clock-readout{
+    display: flex;
+    flex-direction: column;
+    line-height: 1.18;
+  }
+
+  .clock-time{
+    font-size: 17px;
+    font-weight: 750;
+    letter-spacing: .01em;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+    white-space: nowrap;
+  }
+
+  .clock-date{
+    font-size: 11.5px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 520px){
+    .header-top{ align-items: stretch; }
+    .clock{ width: 100%; justify-content: flex-start; }
+  }
+
+  /* =========================================================
+     Composer
+     ========================================================= */
+  .composer{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    padding: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 18px;
+  }
+
+  .text-input,
+  .date-input,
+  .select-input{
+    font: inherit;
+    color: var(--text);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    outline: none;
+    min-width: 0;
+    transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+  }
+
+  .text-input::placeholder{ color: var(--muted); }
+
+  .text-input:focus,
+  .date-input:focus,
+  .select-input:focus{
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+    background: var(--surface);
+  }
+
+  .text-input{ flex: 1 1 220px; }
+  .date-input{ flex: 0 1 152px; }
+  .select-input{ flex: 0 1 128px; cursor: pointer; }
+
+  .btn-primary{
+    font: inherit;
+    font-weight: 700;
+    color: #fff;
+    background: var(--accent);
+    border: none;
+    border-radius: 10px;
+    padding: 11px 22px;
+    cursor: pointer;
+    flex: 0 0 auto;
+    box-shadow: 0 6px 16px -10px var(--accent);
+    transition: background .15s ease, transform .12s ease, box-shadow .15s ease;
+  }
+  .btn-primary:hover{ background: var(--accent-hover); }
+  .btn-primary:active{ transform: scale(.97); }
+
+  @media (max-width: 560px){
+    .text-input{ flex: 1 1 100%; }
+    .date-input,
+    .select-input{ flex: 1 1 0; }
+    .btn-primary{ flex: 1 1 100%; }
+  }
+
+  /* =========================================================
+     Tabs
+     ========================================================= */
+  .tabs{
+    display: flex;
+    gap: 6px;
+    padding: 5px;
+    margin-bottom: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .tab{
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 12px;
+    font: inherit;
+    font-weight: 650;
+    color: var(--muted);
+    background: transparent;
+    border: none;
+    border-radius: 9px;
+    cursor: pointer;
+    transition: background .18s ease, color .18s ease, transform .12s ease;
+  }
+  .tab:hover{ color: var(--text); background: var(--surface-2); }
+  .tab.active,
+  .tab.active:hover{ background: var(--accent); color: #fff; }
+  .tab:active{ transform: scale(.985); }
+
+  .badge{
+    display: inline-block;
+    min-width: 22px;
+    padding: 1px 8px;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1.6;
+    text-align: center;
+    color: var(--muted);
+    background: var(--surface-2);
+    border-radius: 999px;
+    transition: background .18s ease, color .18s ease;
+  }
+  .tab.active .badge{ background: rgba(255,255,255,.24); color: #fff; }
+
+  /* =========================================================
+     Lists
+     ========================================================= */
+  .list{
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+  }
+
+  .task,
+  .history-item{
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    transition: opacity .28s ease, transform .28s ease, max-height .28s ease,
+                border-color .18s ease, box-shadow .18s ease;
+  }
+
+  .task:hover,
+  .history-item:hover{ box-shadow: var(--shadow); }
+
+  .task.new,
+  .history-item.new{ animation: popIn .26s ease both; }
+
+  @keyframes popIn{
+    from{ opacity: 0; transform: translateY(-7px) scale(.985); }
+    to  { opacity: 1; transform: none; }
+  }
+
+  .task.removing,
+  .history-item.removing{
+    opacity: 0;
+    transform: translateX(26px);
+    max-height: 0 !important;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-width: 0;
+    box-shadow: none;
+  }
+
+  /* ---------- Checkbox ---------- */
+  .check{
+    position: relative;
+    display: inline-flex;
+    flex: 0 0 auto;
+    margin-top: 2px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .check input{
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .check .box{
+    width: 22px;
+    height: 22px;
+    border: 2px solid var(--border);
+    border-radius: 7px;
+    display: grid;
+    place-items: center;
+    transition: background .18s ease, border-color .18s ease, box-shadow .18s ease;
+  }
+  .check .box::after{
+    content: "";
+    width: 6px;
+    height: 11px;
+    margin-top: -3px;
+    border: solid #fff;
+    border-width: 0 2.5px 2.5px 0;
+    transform: rotate(45deg) scale(0);
+    transition: transform .18s cubic-bezier(.2,.9,.3,1.4);
+  }
+  .check:hover .box{ border-color: var(--accent); }
+  .check input:focus-visible + .box{
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  .check input:checked + .box{
+    background: var(--ok);
+    border-color: var(--ok);
+  }
+  .check input:checked + .box::after{ transform: rotate(45deg) scale(1); }
+
+  /* ---------- Task body ---------- */
+  .task-body{
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .task-text{
+    font-size: 15px;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    cursor: text;
+  }
+
+  .task-meta{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .pill{
+    display: inline-block;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: .01em;
+    line-height: 1.7;
+    padding: 1px 9px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+  .pill.p-high  { background: var(--p-high-bg); color: var(--p-high-fg); border-color: var(--p-high-bd); }
+  .pill.p-medium{ background: var(--p-med-bg);  color: var(--p-med-fg);  border-color: var(--p-med-bd); }
+  .pill.p-low   { background: var(--p-low-bg);  color: var(--p-low-fg);  border-color: var(--p-low-bd); }
+
+  .pill.due{
+    background: var(--surface-2);
+    color: var(--muted);
+    border-color: var(--border);
+  }
+  .pill.due.overdue{
+    background: var(--p-high-bg);
+    color: var(--p-high-fg);
+    border-color: var(--p-high-bd);
+  }
+
+  .pill.created{
+    background: var(--surface-2);
+    color: var(--muted);
+    border-color: var(--border);
+    font-weight: 600;
+  }
+
+  .pill.edited{
+    background: var(--warn-soft);
+    color: var(--warn);
+    border-color: transparent;
+  }
+
+  .pill.done{
+    background: var(--ok-soft);
+    color: var(--ok);
+    border-color: transparent;
+  }
+
+  .pill.duration{
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-color: transparent;
+  }
+
+  .edit-input{
+    width: 100%;
+    font: inherit;
+    font-size: 15px;
+    color: var(--text);
+    background: var(--surface-2);
+    border: 1px solid var(--accent);
+    border-radius: 9px;
+    padding: 7px 10px;
+    outline: none;
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+
+  /* ---------- Actions ---------- */
+  .task-actions{
+    display: flex;
+    flex: 0 0 auto;
+    gap: 2px;
+    opacity: .55;
+    transition: opacity .18s ease;
+  }
+  .task:hover .task-actions,
+  .task:focus-within .task-actions,
+  .history-item:hover .task-actions,
+  .history-item:focus-within .task-actions{ opacity: 1; }
+
+  @media (hover: none){
+    .task-actions{ opacity: 1; }
+  }
+
+  .icon-btn{
+    width: 32px;
+    height: 32px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    color: var(--muted);
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease, transform .12s ease;
+  }
+  .icon-btn:hover{ background: var(--surface-2); color: var(--text); }
+  .icon-btn:active{ transform: scale(.9); }
+  .icon-btn.danger:hover{ background: var(--danger-soft); color: var(--danger); }
+  .icon-btn svg{
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  /* =========================================================
+     History header
+     ========================================================= */
+  .history-head{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+    padding: 0 2px;
+  }
+
+  .section-title{
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .btn-ghost{
+    font: inherit;
+    font-size: 13px;
+    font-weight: 650;
+    padding: 7px 13px;
+    color: var(--muted);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    cursor: pointer;
+    transition: color .15s ease, border-color .15s ease, background .15s ease, transform .12s ease;
+  }
+  .btn-ghost:not(:disabled):hover{
+    color: var(--danger);
+    border-color: var(--danger);
+    background: var(--danger-soft);
+  }
+  .btn-ghost:not(:disabled):active{ transform: scale(.97); }
+  .btn-ghost:disabled{ opacity: .45; cursor: not-allowed; }
+
+  .history-item .hcheck{
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+    margin-top: 2px;
+    display: grid;
+    place-items: center;
+    color: var(--ok);
+    background: var(--ok-soft);
+    border-radius: 50%;
+  }
+  .history-item .hcheck svg{
+    width: 13px;
+    height: 13px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .history-item .task-text{
+    color: var(--muted);
+    text-decoration: line-through;
+    text-decoration-thickness: 1px;
+    cursor: default;
+  }
+
+  /* =========================================================
+     Activity log
+     ========================================================= */
+  .audit{
+    margin-top: 18px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+  }
+
+  .audit summary{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 14px;
+    list-style: none;
+    cursor: pointer;
+    user-select: none;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    transition: background .15s ease, color .15s ease;
+  }
+  .audit summary::-webkit-details-marker{ display: none; }
+  .audit summary:hover{ background: var(--surface-2); color: var(--text); }
+
+  .summary-left{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .chev{
+    width: 14px;
+    height: 14px;
+    flex: 0 0 auto;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform .2s ease;
+  }
+  .audit[open] .chev{ transform: rotate(90deg); }
+
+  .audit-body{
+    padding: 4px 14px 14px;
+    max-height: 300px;
+    overflow-y: auto;
+    border-top: 1px solid var(--border);
+  }
+
+  .audit-list{
+    list-style: none;
+    margin: 0;
+    padding: 6px 0 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .audit-item{
+    position: relative;
+    margin-left: 4px;
+    padding: 7px 0 7px 18px;
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    animation: popIn .22s ease both;
+  }
+
+  .audit-item::before{
+    content: "";
+    position: absolute;
+    left: -4px;
+    top: 13px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--border);
+  }
+  .audit-item[data-kind="created"]::before  { background: var(--accent); }
+  .audit-item[data-kind="completed"]::before{ background: var(--ok); }
+  .audit-item[data-kind="edited"]::before   { background: var(--warn); }
+  .audit-item[data-kind="deleted"]::before  { background: var(--danger); }
+  .audit-item[data-kind="removed"]::before  { background: var(--danger); }
+  .audit-item[data-kind="cleared"]::before  { background: var(--danger); }
+
+  .audit-time{
+    font-size: 11px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+
+  .audit-msg{
+    font-size: 13px;
+    color: var(--text);
+    overflow-wrap: anywhere;
+  }
+
+  .audit-foot{
+    padding-top: 10px;
+    margin-top: 6px;
+    border-top: 1px dashed var(--border);
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  /* =========================================================
+     Empty states
+     ========================================================= */
+  .empty{
+    margin-top: 4px;
+    padding: 40px 18px;
+    text-align: center;
+    font-size: 14px;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    animation: popIn .3s ease both;
+  }
+
+  .empty.small{
+    padding: 18px 12px;
+    font-size: 13px;
+    border-radius: 10px;
+    margin-top: 8px;
+  }
+
+  /* =========================================================
+     Shake + reduced motion
+     ========================================================= */
+  @keyframes shake{
+    10%, 90% { transform: translateX(-2px); }
+    20%, 80% { transform: translateX(3px); }
+    30%, 50%, 70% { transform: translateX(-5px); }
+    40%, 60% { transform: translateX(5px); }
+  }
+  .shake{ animation: shake .45s cubic-bezier(.36,.07,.19,.97); }
+
+  @media (prefers-reduced-motion: reduce){
+    *,
+    *::before,
+    *::after{
+      animation-duration: .001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: .001ms !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="app-header">
+    <div class="header-top">
+      <div class="brand">
+        <h1>Checklist</h1>
+        <p class="tagline">Tasks, history &amp; a running audit trail — saved in this browser.</p>
+      </div>
+
+      <div class="clock" id="clock" title="Live local date &amp; time">
+        <span class="clock-dot" aria-hidden="true"></span>
+        <span class="clock-readout">
+          <span class="clock-time" id="clockTime">--:--:--</span>
+          <span class="clock-date" id="clockDate">&nbsp;</span>
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <form class="composer" id="composer" autocomplete="off">
+    <input
+      id="taskInput"
+      class="text-input"
+      type="text"
+      placeholder="What needs to be done?"
+      maxlength="200"
+      aria-label="New task"
+    >
+    <input
+      id="dueInput"
+      class="date-input"
+      type="date"
+      title="Due date (optional)"
+      aria-label="Due date"
+    >
+    <select id="priorityInput" class="select-input" aria-label="Priority">
+      <option value="low">Low</option>
+      <option value="medium" selected>Medium</option>
+      <option value="high">High</option>
+    </select>
+    <button type="submit" class="btn-primary">Add</button>
+  </form>
+
+  <div class="tabs" role="tablist" aria-label="Views">
+    <button class="tab active" role="tab" id="tabActive" data-tab="active"
+            aria-selected="true" aria-controls="activePanel">
+      Active <span class="badge" id="activeCount">0</span>
+    </button>
+    <button class="tab" role="tab" id="tabHistory" data-tab="history"
+            aria-selected="false" aria-controls="historyPanel">
+      History <span class="badge" id="historyCount">0</span>
+    </button>
+  </div>
+
+  <section id="activePanel" role="tabpanel" aria-labelledby="tabActive">
+    <ul class="list" id="taskList"></ul>
+    <div class="empty" id="taskEmpty">No tasks yet — add one above ✨</div>
+  </section>
+
+  <section id="historyPanel" role="tabpanel" aria-labelledby="tabHistory" hidden>
+    <div class="history-head">
+      <span class="section-title">Completed tasks</span>
+      <button type="button" class="btn-ghost" id="clearLogs">Clear Old Logs</button>
+    </div>
+
+    <ul class="list" id="historyList"></ul>
+    <div class="empty" id="historyEmpty">No history yet — completed tasks will show up here.</div>
+
+    <details class="audit" id="auditPanel">
+      <summary>
+        <span class="summary-left">
+          <svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+          Activity log
+          <span class="badge" id="auditCount">0</span>
+        </span>
+      </summary>
+      <div class="audit-body">
+        <ul class="audit-list" id="auditList"></ul>
+        <div class="empty small" id="auditEmpty">No activity recorded yet.</div>
+        <div class="audit-foot">
+          <button type="button" class="btn-ghost" id="clearAudit">Clear activity log</button>
+        </div>
+      </div>
+    </details>
+  </section>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* =========================================================
+     Constants & state
+     ========================================================= */
+  var STORAGE_KEY = 'checklist-app::tasks-history-audit::v1';
+  var MAX_AUDIT = 200;
+
+  var state = {
+    tasks: [],    // active tasks
+    history: [],  // completed tasks (with completedAt)
+    audit: []     // activity log entries
+  };
+
+  var clockTimer = null;
+
+  /* =========================================================
+     DOM references
+     ========================================================= */
+  var els = {
+    clockTime:      document.getElementById('clockTime'),
+    clockDate:      document.getElementById('clockDate'),
+    composer:       document.getElementById('composer'),
+    input:          document.getElementById('taskInput'),
+    due:            document.getElementById('dueInput'),
+    priority:       document.getElementById('priorityInput'),
+    tabs:           document.querySelectorAll('.tab'),
+    activePanel:    document.getElementById('activePanel'),
+    historyPanel:   document.getElementById('historyPanel'),
+    taskList:       document.getElementById('taskList'),
+    historyList:    document.getElementById('historyList'),
+    taskEmpty:      document.getElementById('taskEmpty'),
+    historyEmpty:   document.getElementById('historyEmpty'),
+    activeCount:    document.getElementById('activeCount'),
+    historyCount:   document.getElementById('historyCount'),
+    clearLogs:      document.getElementById('clearLogs'),
+    auditList:      document.getElementById('auditList'),
+    auditEmpty:     document.getElementById('auditEmpty'),
+    auditCount:     document.getElementById('auditCount'),
+    clearAudit:     document.getElementById('clearAudit')
+  };
+
+  /* =========================================================
+     Generic helpers
+     ========================================================= */
+  function uid() {
+    return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 9);
+  }
+
+  /* ---- Raw ISO timestamps (sorting + storage) ---- */
+  function nowIso() {
+    return new Date().toISOString();
+  }
+
+  function toIso(value) {
+    if (typeof value === 'number' && isFinite(value)) {
+      var dn = new Date(value);
+      return isNaN(dn.getTime()) ? null : dn.toISOString();
+    }
+    if (typeof value === 'string' && value) {
+      var d = new Date(value);
+      return isNaN(d.getTime()) ? null : d.toISOString();
+    }
+    return null;
+  }
+
+  function parseIso(iso) {
+    if (!iso) return null;
+    var d = new Date(iso);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  /* ---- Human-readable formatting ---- */
+  function fmtTimestamp(iso) {
+    var d = parseIso(iso);
+    if (!d) return '—';
+    try {
+      return d.toLocaleString(undefined, {
+        month: 'short', day: 'numeric', year: 'numeric',
+        hour: 'numeric', minute: '2-digit', second: '2-digit'
+      });
+    } catch (e) {
+      return d.toString();
+    }
+  }
+
+  function fmtShort(iso) {
+    var d = parseIso(iso);
+    if (!d) return '—';
+    try {
+      return d.toLocaleString(undefined, {
+        month: 'short', day: 'numeric',
+        hour: 'numeric', minute: '2-digit', second: '2-digit'
+      });
+    } catch (e) {
+      return d.toString();
+    }
+  }
+
+  function fmtDuration(ms) {
+    if (typeof ms !== 'number' || !isFinite(ms) || ms < 0) return '';
+    var totalSec = Math.floor(ms / 1000);
+    if (totalSec < 60) return totalSec + 's';
+
+    var mins = Math.floor(totalSec / 60);
+    if (mins < 60) return mins + 'm ' + (totalSec % 60) + 's';
+
+    var hours = Math.floor(mins / 60);
+    if (hours < 24) return hours + 'h ' + (mins % 60) + 'm';
+
+    var days = Math.floor(hours / 24);
+    return days + 'd ' + (hours % 24) + 'h';
+  }
+
+  /* ---- Due dates ---- */
+  function parseDue(due) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(due || '');
+    if (!m) return null;
+    var d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  function formatDue(due) {
+    var d = parseDue(due);
+    if (!d) return '';
+    try {
+      return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    } catch (e) {
+      return due;
+    }
+  }
+
+  function isOverdue(due) {
+    var d = parseDue(due);
+    if (!d) return false;
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return d.getTime() < today.getTime();
+  }
+
+  /* ---- Priority ---- */
+  function normalizePriority(p) {
+    return (p === 'low' || p === 'high') ? p : 'medium';
+  }
+
+  function labelPriority(p) {
+    return p.charAt(0).toUpperCase() + p.slice(1);
+  }
+
+  /* ---- Text quoting for log messages ---- */
+  function quote(text) {
+    var t = String(text);
+    if (t.length > 60) t = t.slice(0, 57) + '…';
+    return '“' + t + '”';
+  }
+
+  /* =========================================================
+     Live clock
+     ========================================================= */
+  function updateClock() {
+    var now = new Date();
+
+    var timeStr;
+    var dateStr;
+    try {
+      timeStr = now.toLocaleTimeString(undefined, {
+        hour: 'numeric', minute: '2-digit', second: '2-digit'
+      });
+      dateStr = now.toLocaleDateString(undefined, {
+        weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
+      });
+    } catch (e) {
+      timeStr = now.toTimeString().slice(0, 8);
+      dateStr = now.toDateString();
+    }
+
+    if (els.clockTime) els.clockTime.textContent = timeStr;
+    if (els.clockDate) els.clockDate.textContent = dateStr;
+  }
+
+  function startClock() {
+    updateClock();
+    if (clockTimer) clearInterval(clockTimer);
+    clockTimer = setInterval(updateClock, 1000);
+  }
+
+  /* =========================================================
+     Persistence
+     ========================================================= */
+  function isValidEntry(x) {
+    return !!x && typeof x === 'object' && typeof x.text === 'string' && x.text.trim() !== '';
+  }
+
+  function normalizeTask(x) {
+    return {
+      id: (typeof x.id === 'string' && x.id) ? x.id : uid(),
+      text: String(x.text).slice(0, 200),
+      due: (typeof x.due === 'string') ? x.due : '',
+      priority: normalizePriority(x.priority),
+      createdAt: toIso(x.createdAt) || nowIso(),
+      editedAt: toIso(x.editedAt) || null,
+      completedAt: toIso(x.completedAt) || null
+    };
+  }
+
+  function normalizeAudit(x) {
+    var at = toIso(x && x.at) || nowIso();
+    var kind = (x && typeof x.kind === 'string') ? x.kind : 'info';
+    var message = (x && typeof x.message === 'string') ? x.message : '';
+    return {
+      id: (x && typeof x.id === 'string' && x.id) ? x.id : uid(),
+      kind: kind,
+      message: message,
+      at: at
+    };
+  }
+
+  function isValidAudit(x) {
+    return !!x && typeof x === 'object' && typeof x.message === 'string' && x.message !== '';
+  }
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+
+      var data = JSON.parse(raw);
+      if (!data || typeof data !== 'object') return;
+
+      state.tasks = Array.isArray(data.tasks)
+        ? data.tasks.filter(isValidEntry).map(normalizeTask)
+        : [];
+
+      state.history = Array.isArray(data.history)
+        ? data.history.filter(isValidEntry).map(normalizeTask)
+        : [];
+
+      state.audit = Array.isArray(data.audit)
+        ? data.audit.filter(isValidAudit).map(normalizeAudit).slice(0, MAX_AUDIT)
+        : [];
+
+    } catch (err) {
+      // Corrupted / unreadable store — start clean rather than crash.
+      console.warn('[Checklist] Could not read saved data:', err);
+      state.tasks = [];
+      state.history = [];
+      state.audit = [];
+    }
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        version: 1,
+        tasks: state.tasks,
+        history: state.history,
+        audit: state.audit
+      }));
+    } catch (err) {
+      console.warn('[Checklist] Could not save data:', err);
+    }
+  }
+
+  /* =========================================================
+     Activity log
+     ========================================================= */
+  function logEvent(kind, message) {
+    state.audit.unshift({
+      id: uid(),
+      kind: kind,
+      message: message,
+      at: nowIso()
+    });
+    if (state.audit.length > MAX_AUDIT) {
+      state.audit.length = MAX_AUDIT;
+    }
+  }
+
+  /* =========================================================
+     Animated removal
+     ========================================================= */
+  function animateOut(el, done) {
+    if (!el || el.dataset.leaving === '1') return;
+    el.dataset.leaving = '1';
+
+    el.style.maxHeight = (el.scrollHeight + 4) + 'px';
+    void el.offsetHeight; // force reflow so the transition has a start value
+    el.classList.add('removing');
+
+    var finished = false;
+    function finish() {
+      if (finished) return;
+      finished = true;
+      done();
+    }
+
+    el.addEventListener('transitionend', function (e) {
+      if (e.target === el && e.propertyName === 'max-height') finish();
+    });
+    setTimeout(finish, 420); // fallback (reduced motion, background tab, etc.)
+  }
+
+  /* =========================================================
+     Element builders — active task
+     ========================================================= */
+  function createTaskEl(task) {
+    var li = document.createElement('li');
+    li.className = 'task';
+    li.dataset.id = task.id;
+
+    /* --- checkbox --- */
+    var check = document.createElement('label');
+    check.className = 'check';
+
+    var cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = false;
+    cb.setAttribute('aria-label', 'Mark "' + task.text + '" as complete');
+
+    var box = document.createElement('span');
+    box.className = 'box';
+
+    check.appendChild(cb);
+    check.appendChild(box);
+
+    cb.addEventListener('change', function () {
+      if (!cb.checked) return;
+      cb.disabled = true;
+      animateOut(li, function () { completeTask(task.id); });
+    });
+
+    /* --- body --- */
+    var body = document.createElement('div');
+    body.className = 'task-body';
+
+    var text = document.createElement('div');
+    text.className = 'task-text';
+    text.textContent = task.text;
+    text.title = 'Double-click to edit';
+    text.addEventListener('dblclick', function () { startEdit(li, task.id); });
+    body.appendChild(text);
+
+    var meta = document.createElement('div');
+    meta.className = 'task-meta';
+
+    var pEl = document.createElement('span');
+    pEl.className = 'pill p-' + task.priority;
+    pEl.textContent = labelPriority(task.priority);
+    meta.appendChild(pEl);
+
+    if (task.due) {
+      var overdue = isOverdue(task.due);
+      var dEl = document.createElement('span');
+      dEl.className = 'pill due' + (overdue ? ' overdue' : '');
+      dEl.textContent = (overdue ? 'Overdue · ' : 'Due ') + formatDue(task.due);
+      meta.appendChild(dEl);
+    }
+
+    var cEl = document.createElement('span');
+    cEl.className = 'pill created';
+    cEl.textContent = 'Added ' + fmtShort(task.createdAt);
+    cEl.title = 'Created on ' + fmtTimestamp(task.createdAt);
+    meta.appendChild(cEl);
+
+    if (task.editedAt) {
+      var eEl = document.createElement('span');
+      eEl.className = 'pill edited';
+      eEl.textContent = 'Edited';
+      eEl.title = 'Last edited on ' + fmtTimestamp(task.editedAt);
+      meta.appendChild(eEl);
+    }
+
+    body.appendChild(meta);
+
+    /* --- actions --- */
+    var actions = document.createElement('div');
+    actions.className = 'task-actions';
+
+    var editBtn = document.createElement('button');
+    editBtn.type = 'button';
+    editBtn.className = 'icon-btn';
+    editBtn.title = 'Edit task';
+    editBtn.setAttribute('aria-label', 'Edit task');
+    editBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+      '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
+    editBtn.addEventListener('click', function () { startEdit(li, task.id); });
+
+    var delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.className = 'icon-btn danger';
+    delBtn.title = 'Delete task';
+    delBtn.setAttribute('aria-label', 'Delete task');
+    delBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+      '<path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/>' +
+      '<path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
+    delBtn.addEventListener('click', function () {
+      delBtn.disabled = true;
+      animateOut(li, function () { deleteTask(task.id); });
+    });
+
+    actions.appendChild(editBtn);
+    actions.appendChild(delBtn);
+
+    li.appendChild(check);
+    li.appendChild(body);
+    li.appendChild(actions);
+
+    return li;
+  }
+
+  /* =========================================================
+     Element builders — history entry
+     ========================================================= */
+  function createHistoryEl(item) {
+    var li = document.createElement('li');
+    li.className = 'history-item';
+    li.dataset.id = item.id;
+
+    var icon = document.createElement('span');
+    icon.className = 'hcheck';
+    icon.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+
+    var body = document.createElement('div');
+    body.className = 'task-body';
+
+    var text = document.createElement('div');
+    text.className = 'task-text';
+    text.textContent = item.text;
+    body.appendChild(text);
+
+    var meta = document.createElement('div');
+    meta.className = 'task-meta';
+
+    /* completion timestamp */
+    var doneEl = document.createElement('span');
+    doneEl.className = 'pill done';
+    doneEl.textContent = 'Completed ' + fmtTimestamp(item.completedAt);
+    meta.appendChild(doneEl);
+
+    /* creation timestamp */
+    var createdEl = document.createElement('span');
+    createdEl.className = 'pill created';
+    createdEl.textContent = 'Created ' + fmtTimestamp(item.createdAt);
+    meta.appendChild(createdEl);
+
+    /* time taken */
+    var start = parseIso(item.createdAt);
+    var end = parseIso(item.completedAt);
+    if (start && end) {
+      var dur = fmtDuration(end.getTime() - start.getTime());
+      if (dur) {
+        var durEl = document.createElement('span');
+        durEl.className = 'pill duration';
+        durEl.textContent = 'Took ' + dur;
+        durEl.title = 'Time between creation and completion';
+        meta.appendChild(durEl);
+      }
+    }
+
+    /* priority (only show non-default to reduce noise) */
+    if (item.priority && item.priority !== 'medium') {
+      var pEl = document.createElement('span');
+      pEl.className = 'pill p-' + item.priority;
+      pEl.textContent = labelPriority(item.priority);
+      meta.appendChild(pEl);
+    }
+
+    /* edited marker */
+    if (item.editedAt) {
+      var eEl = document.createElement('span');
+      eEl.className = 'pill edited';
+      eEl.textContent = 'Edited';
+      eEl.title = 'Last edited on ' + fmtTimestamp(item.editedAt);
+      meta.appendChild(eEl);
+    }
+
+    body.appendChild(meta);
+
+    var actions = document.createElement('div');
+    actions.className = 'task-actions';
+
+    var delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.className = 'icon-btn danger';
+    delBtn.title = 'Remove from history';
+    delBtn.setAttribute('aria-label', 'Remove from history');
+    delBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+      '<path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/>' +
+      '<path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
+    delBtn.addEventListener('click', function () {
+      delBtn.disabled = true;
+      animateOut(li, function () { removeHistoryEntry(item.id); });
+    });
+
+    actions.appendChild(delBtn);
+
+    li.appendChild(icon);
+    li.appendChild(body);
+    li.appendChild(actions);
+
+    return li;
+  }
+
+  /* =========================================================
+     Element builders — activity log entry
+     ========================================================= */
+  function createAuditEl(ev) {
+    var li = document.createElement('li');
+    li.className = 'audit-item';
+    li.dataset.kind = ev.kind;
+
+    var time = document.createElement('span');
+    time.className = 'audit-time';
+    time.textContent = fmtTimestamp(ev.at);
+    time.title = ev.at;
+
+    var msg = document.createElement('span');
+    msg.className = 'audit-msg';
+    msg.textContent = ev.message;
+
+    li.appendChild(time);
+    li.appendChild(msg);
+
+    return li;
+  }
+
+  /* =========================================================
+     Rendering
+     ========================================================= */
+  function renderTasks(animateId) {
+    els.taskList.textContent = '';
+    els.taskEmpty.hidden = state.tasks.length > 0;
+
+    for (var i = 0; i < state.tasks.length; i++) {
+      var task = state.tasks[i];
+      var li = createTaskEl(task);
+      if (animateId && task.id === animateId) li.classList.add('new');
+      els.taskList.appendChild(li);
+    }
+  }
+
+  function renderHistory(animateId) {
+    els.historyList.textContent = '';
+
+    var items = state.history.slice().sort(function (a, b) {
+      return (parseIso(b.completedAt) || 0) - (parseIso(a.completedAt) || 0);
+    });
+
+    els.historyEmpty.hidden = items.length > 0;
+    els.clearLogs.disabled = items.length === 0;
+
+    for (var i = 0; i < items.length; i++) {
+      var li = createHistoryEl(items[i]);
+      if (animateId && items[i].id === animateId) li.classList.add('new');
+      els.historyList.appendChild(li);
+    }
+  }
+
+  function renderAudit() {
+    els.auditList.textContent = '';
+    els.auditEmpty.hidden = state.audit.length > 0;
+    els.clearAudit.disabled = state.audit.length === 0;
+    els.auditCount.textContent = String(state.audit.length);
+
+    for (var i = 0; i < state.audit.length; i++) {
+      els.auditList.appendChild(createAuditEl(state.audit[i]));
+    }
+  }
+
+  function updateCounts() {
+    els.activeCount.textContent = String(state.tasks.length);
+    els.historyCount.textContent = String(state.history.length);
+  }
+
+  function render(opts) {
+    opts = opts || {};
+    renderTasks(opts.taskId);
+    renderHistory(opts.historyId);
+    renderAudit();
+    updateCounts();
+  }
+
+  /* =========================================================
+     Tab switching
+     ========================================================= */
+  function setTab(tab) {
+    for (var i = 0; i < els.tabs.length; i++) {
+      var btn = els.tabs[i];
+      var on = btn.dataset.tab === tab;
+      btn.classList.toggle('active', on);
+      btn.setAttribute('aria-selected', on ? 'true' : 'false');
+    }
+    els.activePanel.hidden = (tab !== 'active');
+    els.historyPanel.hidden = (tab !== 'history');
+  }
+
+  /* =========================================================
+     Task lookup
+     ========================================================= */
+  function findTask(id) {
+    for (var i = 0; i < state.tasks.length; i++) {
+      if (state.tasks[i].id === id) return state.tasks[i];
+    }
+    return null;
+  }
+
+  /* =========================================================
+     Actions
+     ========================================================= */
+  function addTask(text, due, priority) {
+    var task = {
+      id: uid(),
+      text: text,
+      due: due || '',
+      priority: normalizePriority(priority),
+      createdAt: nowIso(),
+      editedAt: null,
+      completedAt: null
+    };
+
+    state.tasks.unshift(task);
+    logEvent('created', 'Created ' + quote(task.text));
+    save();
+    render({ taskId: task.id });
+  }
+
+  function completeTask(id) {
+    var idx = -1;
+    for (var i = 0; i < state.tasks.length; i++) {
+      if (state.tasks[i].id === id) { idx = i; break; }
+    }
+    if (idx === -1) return;
+
+    var task = state.tasks.splice(idx, 1)[0];
+    task.completedAt = nowIso();
+
+    state.history.unshift(task);
+    logEvent('completed', 'Completed ' + quote(task.text));
+    save();
+    render({ historyId: task.id });
+  }
+
+  function deleteTask(id) {
+    var task = findTask(id);
+    if (!task) return;
+
+    state.tasks = state.tasks.filter(function (t) { return t.id !== id; });
+    logEvent('deleted', 'Deleted ' + quote(task.text));
+    save();
+    render();
+  }
+
+  function editTask(id, newText) {
+    var task = findTask(id);
+    if (!task) return;
+
+    var trimmed = String(newText).trim();
+    if (!trimmed || trimmed === task.text) {
+      render();
+      return;
+    }
+
+    var oldText = task.text;
+    task.text = trimmed.slice(0, 200);
+    task.editedAt = nowIso();
+
+    logEvent('edited', 'Edited ' + quote(oldText) + ' → ' + quote(task.text));
+    save();
+    render();
+  }
+
+  function removeHistoryEntry(id) {
+    var item = null;
+    for (var i = 0; i < state.history.length; i++) {
+      if (state.history[i].id === id) { item = state.history[i]; break; }
+    }
+    if (!item) return;
+
+    state.history = state.history.filter(function (h) { return h.id !== id; });
+    logEvent('removed', 'Removed ' + quote(item.text) + ' from history');
+    save();
+    render();
+  }
+
+  function clearHistory() {
+    if (!state.history.length) return;
+
+    var count = state.history.length;
+    var noun = (count === 1) ? 'entry' : 'entries';
+    var ok = false;
+
+    try {
+      ok = window.confirm(
+        'Delete all ' + count + ' history ' + noun + '?\n\nThis cannot be undone.'
+      );
+    } catch (e) {
+      ok = false;
+    }
+    if (!ok) return;
+
+    state.history = [];
+    logEvent('cleared', 'Cleared history — ' + count + ' ' + noun + ' removed');
+    save();
+    render();
+  }
+
+  function clearAudit() {
+    if (!state.audit.length) return;
+
+    var ok = false;
+    try {
+      ok = window.confirm('Clear the entire activity log?');
+    } catch (e) {
+      ok = false;
+    }
+    if (!ok) return;
+
+    state.audit = [];
+    logEvent('cleared', 'Activity log cleared');
+    save();
+    render();
+  }
+
+  /* =========================================================
+     Inline editing
+     ========================================================= */
+  function startEdit(li, taskId) {
+    if (!li || li.classList.contains('editing')) return;
+
+    var task = findTask(taskId);
+    if (!task) return;
+
+    var textEl = li.querySelector('.task-text');
+    if (!textEl) return;
+
+    li.classList.add('editing');
+
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'edit-input';
+    input.value = task.text;
+    input.maxLength = 200;
+    input.setAttribute('aria-label', 'Edit task text');
+
+    textEl.replaceWith(input);
+    input.focus();
+    try {
+      var len = input.value.length;
+      input.setSelectionRange(len, len);
+    } catch (e) { /* ignore */ }
+
+    var settled = false;
+
+    function commit(keepChanges) {
+      if (settled) return;
+      settled = true;
+
+      if (keepChanges) {
+        editTask(task.id, input.value);
+      } else {
+        render();
+      }
+    }
+
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        commit(true);
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        commit(false);
+      }
+    });
+
+    input.addEventListener('blur', function () { commit(true); });
+  }
+
+  /* =========================================================
+     Event wiring
+     ========================================================= */
+  els.composer.addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    var text = els.input.value.trim();
+
+    if (!text) {
+      els.input.classList.remove('shake');
+      void els.input.offsetWidth;
+      els.input.classList.add('shake');
+      els.input.focus();
+      return;
+    }
+
+    addTask(text, els.due.value, els.priority.value);
+
+    els.input.value = '';
+    els.due.value = '';
+    els.priority.value = 'medium';
+    els.input.focus();
+  });
+
+  for (var i = 0; i < els.tabs.length; i++) {
+    (function (btn) {
+      btn.addEventListener('click', function () { setTab(btn.dataset.tab); });
+    })(els.tabs[i]);
+  }
+
+  els.clearLogs.addEventListener('click', clearHistory);
+  els.clearAudit.addEventListener('click', clearAudit);
+
+  /* Keep multiple tabs/windows in sync. */
+  window.addEventListener('storage', function (e) {
+    if (e.key !== STORAGE_KEY) return;
+    load();
+    render();
+  });
+
+  /* Re-sync the clock when the tab becomes visible again
+     (background tabs throttle setInterval). */
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) updateClock();
+  });
+
+  /* =========================================================
+     Boot
+     ========================================================= */
+  load();
+  render();
+  setTab('active');
+  startClock();
+})();
+</script>
+</body>
+</html>
